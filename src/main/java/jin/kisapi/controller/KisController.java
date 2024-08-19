@@ -47,16 +47,20 @@ public class KisController {
     @GetMapping("/indices") // 주요 지수
     public String majorIndices(Model model) {
 
+        // 주요 지수 데이터를 담고 있는 리스트
         List<Tuple2<String, String>> iscdsAndOtherVariable1 = Arrays.asList(
                 Tuples.of("0001", "U"),
                 Tuples.of("2001", "U"),
                 Tuples.of("1001", "U")
         );
 
-        Flux<IndexData> indicesFlux = Flux.fromIterable(iscdsAndOtherVariable1)
-                .concatMap(tuple -> getMajorIndex(tuple.getT1(), tuple.getT2()))
-                .map(jsonData -> {
-                    ObjectMapper objectMapper = new ObjectMapper();
+        // 비동기적으로 데이터 요청을 처리 (Flux는 리스트의 각 항목을 비동기적으로 처리)
+        // 여러 개의 데이터를 비동기적으로 처리(Flux는 0개 이상의 데이터를 처리)
+        // concatMap은 튜플의 각 항목에 대해 getMajorIndex를 호출하고, 모든 Mono 결과를 순차적으로 처리하여 Flux
+        Flux<IndexData> indicesFlux = Flux.fromIterable(iscdsAndOtherVariable1)  // Flux를 생성
+                .concatMap(tuple -> getMajorIndex(tuple.getT1(), tuple.getT2())) // 각 튜플을 처리하여 Mono<String>을 반환하는 getMajorIndex 메서드를 호출 (비동기적으로 API 요청을 수행하고 결과를 Mono로 반환)
+                .map(jsonData -> {                                               // map: Flux의 각 항목을 변환하는 연산입니다. 여기서는 JSON 데이터를 IndexData 객체로 변환
+                    ObjectMapper objectMapper = new ObjectMapper();              // ObjectMapper를 사용하여 JSON 문자열을 IndexData 객체로 변환
                     try {
                         return objectMapper.readValue(jsonData, IndexData.class);
                     } catch (JsonProcessingException e) {
@@ -64,8 +68,10 @@ public class KisController {
                     }
                 });
 
-        List<IndexData> indicesList = indicesFlux.collectList().block();
-        model.addAttribute("indicesKor", indicesList);
+        //collectList(): Flux의 모든 데이터를 수집하여 List<IndexData>로 만듭니다. 이 연산은 최종 결과를 List로 모읍니다.
+        //block(): 비동기 작업을 동기적으로 차단하고 결과를 반환합니다. 즉, 비동기 흐름을 기다려서 결과를 동기적으로 받아옵니다.
+        List<IndexData> indicesList = indicesFlux.collectList().block();   // Flux의 모든 데이터를 수집하여 List<IndexData>로 만듭니다. 이 연산은 최종 결과를 List로 모읍니다.
+        model.addAttribute("indicesKor", indicesList);  //뷰에 데이터를 전달
 
         model.addAttribute("jobDate", getJobDateTime());
 
@@ -87,7 +93,7 @@ public class KisController {
     public Mono<String> getMajorIndex(String iscd, String fid_cond_mrkt_div_code) {
 
         if (fid_cond_mrkt_div_code.equals("U")) {
-            path = KisConfig.FHKUP03500100_PATH;
+            path = KisConfig.FHKUP03500100_PATH;  // 거래ID
             tr_id = "FHKUP03500100";
         } else {
             path = KisConfig.FHKST03030100_PATH;

@@ -103,11 +103,11 @@ public class KisController {
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path(path)
-                        .queryParam("fid_cond_mrkt_div_code", fid_cond_mrkt_div_code)
-                        .queryParam("fid_input_iscd", iscd)
-                        .queryParam("fid_input_date_1", getStringToday())
-                        .queryParam("fid_input_date_2", getStringToday())
-                        .queryParam("fid_period_div_code", "D")
+                        .queryParam("fid_cond_mrkt_div_code", fid_cond_mrkt_div_code) // 시장 구분 코드
+                        .queryParam("fid_input_iscd", iscd) //종목 코드
+                        .queryParam("fid_input_date_1", getStringToday()) // 시작 날짜
+                        .queryParam("fid_input_date_2", getStringToday()) // 종료 날짜
+                        .queryParam("fid_period_div_code", "D") // 기간 구분 코드  ("D"는 일 단위)
                         .build())
                 .header("content-type","application/json")
                 .header("authorization","Bearer " + accessTokenManager.getAccessToken())
